@@ -8,7 +8,7 @@ import HomePage from "./pages/home/home";
 import SignUpPage from "./pages/sign-up/sign-up";
 import SignInPage from "./pages/sign-in/sign-in";
 import firebase from "./firebase/firebase";
-import { setUser } from "./redux/user/user-actions";
+import { setUser, clearUser } from "./redux/user/user-actions";
 import Spinner from "./components/spinner/spinner";
 
 class App extends Component {
@@ -17,6 +17,9 @@ class App extends Component {
       if (user) {
         this.props.setUser(user);
         this.props.history.push("/");
+      } else {
+        this.props.history.push("/auth/signin");
+        this.props.clearUser();
       }
     });
   }
@@ -38,6 +41,9 @@ const mapDispatchToProps = (dispatch) => {
   return {
     setUser: (user) => {
       return dispatch(setUser(user));
+    },
+    clearUser: () => {
+      return dispatch(clearUser());
     },
   };
 };
