@@ -5,3 +5,22 @@ body,
   background-color: #eee;
   padding: 1em;
 }
+
+.messages {
+  height: 55vh;
+  overflow-y: scroll;
+}
+
+.message-form {
+  position: fixed !important;
+  bottom: 1em;
+  margin-left: 320px !important;
+  left: 0;
+  right: 1em;
+  z-index: 200;
+}
+
+.message-self {
+  border-left: 2px solid orange;
+  padding-left: 8px;
+}
