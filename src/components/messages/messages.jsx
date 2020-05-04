@@ -16,11 +16,16 @@ class Messages extends Component {
       messages: [],
       isLoading: true,
       progressBar: false,
+      uniqueUsersCount: 0,
+      searchTerm: "",
+      loadingSearch: false,
+      searchResults: [],
     };
   }
 
   componentDidUpdate(prevProps) {
     if (prevProps.channel !== this.props.channel) {
+      this.setState({ messages: [], uniqueUsersCount: 0 });
       const { user, channel } = this.props;
 
       if (user && channel) {
@@ -33,12 +38,51 @@ class Messages extends Component {
     this.addMessageListener(channelId);
   };
 
+  handleSearch = (event) => {
+    this.setState(
+      {
+        searchTerm: event.target.value,
+        loadingSearch: true,
+      },
+      () => {
+        this.searchMessages();
+      }
+    );
+  };
+
+  searchMessages = () => {
+    const allMessages = [...this.state.messages];
+    const querry = new RegExp(this.state.searchTerm, "gim");
+
+    const searchResults = allMessages.reduce((acc, message) => {
+      if (
+        message.content &&
+        (message.content.match(querry) || message.user.name.match(querry))
+      ) {
+        acc.push(message);
+      }
+      return acc;
+    }, []);
+
+    this.setState({ searchResults });
+    setTimeout(() => {
+      this.setState({ loadingSearch: false });
+    }, 100);
+  };
+
   addMessageListener = (channelId) => {
     let messages = [];
+    let uniqueUsers = new Set();
     this.messagesRef.child(channelId).on("child_added", (snapshot) => {
       messages.push(snapshot.val());
-      console.log(messages);
-      this.setState({ messages, messagesLoading: false });
+      if (snapshot.val().user.name) {
+        uniqueUsers.add(snapshot.val().user.name);
+      }
+      this.setState({
+        messages,
+        messagesLoading: false,
+        uniqueUsersCount: uniqueUsers.size,
+      });
     });
   };
 
@@ -61,18 +105,32 @@ class Messages extends Component {
   };
 
   render() {
-    const { messages, progressBar } = this.state;
+    const {
+      messages,
+      progressBar,
+      uniqueUsersCount,
+      searchTerm,
+      loadingSearch,
+      searchResults,
+    } = this.state;
     const { user, channel } = this.props;
 
     return (
       <React.Fragment>
-        <MessagesHeader />
+        <MessagesHeader
+          channelName={channel ? `#${channel.name}` : ""}
+          uniqueUsersCount={uniqueUsersCount}
+          handleSearch={this.handleSearch}
+          loadingSearch={loadingSearch}
+        />
 
         <Segment>
           <Comment.Group
             className={progressBar ? "messages-progress" : "messages"}
           >
-            {this.displayMessages(messages)}
+            {searchTerm
+              ? this.displayMessages(searchResults)
+              : this.displayMessages(messages)}
           </Comment.Group>
         </Segment>
 

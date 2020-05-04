@@ -139,7 +139,7 @@ class MessagesForm extends Component {
       uploadState,
       percentUploaded,
     } = this.state;
-    console.log(errors);
+
     return (
       <Segment className="message-form">
         <Input
@@ -169,7 +169,7 @@ class MessagesForm extends Component {
             labelPosition="right"
             icon="cloud upload"
             onClick={this.openModal}
-            disabled={isLoading}
+            disabled={uploadState === "uploading"}
           />
         </Button.Group>
         <FileModal
