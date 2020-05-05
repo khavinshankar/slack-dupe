@@ -1,5 +1,13 @@
 import React, { Component } from "react";
-import { Menu, Icon, Modal, Form, Input, Button } from "semantic-ui-react";
+import {
+  Menu,
+  Icon,
+  Modal,
+  Form,
+  Input,
+  Button,
+  Label,
+} from "semantic-ui-react";
 import { connect } from "react-redux";
 
 import firebase from "../../../firebase/firebase";
@@ -13,9 +21,12 @@ class Channels extends Component {
     super();
 
     this.channelRef = firebase.database().ref("channels");
+    this.messagesRef = firebase.database().ref("messages");
 
     this.state = {
       channels: [],
+      channel: null,
+      notifications: [],
       modal: false,
       channelName: "",
       aboutChannel: "",
@@ -43,9 +54,80 @@ class Channels extends Component {
       channels.push(snapshot.val());
       this.setState({ channels }, () => {
         this.setInitialChannel();
+        this.addNotificationsListener(snapshot.key);
       });
     });
   }
+
+  addNotificationsListener = (channelId) => {
+    const { channel, notifications } = this.state;
+    this.messagesRef.child(channelId).on("value", (snapshot) => {
+      if (channel) {
+        this.handleNotifications(
+          channelId,
+          channel.id,
+          notifications,
+          snapshot
+        );
+      }
+    });
+  };
+
+  handleNotifications = (
+    channelId,
+    currentChannelId,
+    notifications,
+    snapshot
+  ) => {
+    let lastTotal = 0;
+    let index = notifications.findIndex((notification) => {
+      return notification.id === channelId;
+    });
+
+    if (index === -1) {
+      notifications.push({
+        id: channelId,
+        total: snapshot.numChildren(),
+        lastKnownTotal: snapshot.numChildren(),
+        count: 0,
+      });
+    } else {
+      if (channelId !== currentChannelId) {
+        lastTotal = notifications[index].total;
+        if (snapshot.numChildren() - lastTotal > 0) {
+          notifications[index].count = snapshot.numChildren() - lastTotal;
+        }
+      }
+      notifications[index].lastKnownTotal = snapshot.numChildren();
+    }
+
+    this.setState({ notifications });
+  };
+
+  clearNotifications = () => {
+    const { channel, notifications } = this.state;
+    const index = notifications.findIndex((notification) => {
+      return notification.id === channel.id;
+    });
+
+    if (index !== -1) {
+      let updatedNotifications = [...notifications];
+      updatedNotifications[index].total = notifications[index].lastKnownTotal;
+      updatedNotifications[index].count = 0;
+      this.setState({ notifications: updatedNotifications });
+    }
+  };
+
+  getChannelNotificationsCount = (channel) => {
+    let count = 0;
+    this.state.notifications.forEach((notification) => {
+      if (notification.id === channel.id) {
+        count = notification.count;
+      }
+    });
+
+    return count;
+  };
 
   setInitialChannel = () => {
     const { initialLoad, channels } = this.state;
@@ -60,9 +142,11 @@ class Channels extends Component {
   };
 
   changeChannel = (channel) => {
+    this.setActiveChannel(channel);
+    this.clearNotifications();
     this.props.setCurrentChannel(channel);
     this.props.setChannelPrivate(false);
-    this.setActiveChannel(channel);
+    this.setState({ channel });
   };
 
   openModal = () => {
@@ -118,6 +202,12 @@ class Channels extends Component {
               style={{ opacity: 0.7 }}
               active={this.state.activeChannel === channel.id}
             >
+              {" "}
+              {this.getChannelNotificationsCount(channel) ? (
+                <Label color="red">
+                  {this.getChannelNotificationsCount(channel)}
+                </Label>
+              ) : null}
               #{channel.name}
             </Menu.Item>
           );
