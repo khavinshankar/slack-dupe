@@ -12,6 +12,7 @@ class Messages extends Component {
     super();
 
     this.messagesRef = firebase.database().ref("messages");
+    this.privateMessagesRef = firebase.database().ref("private-messages");
     this.state = {
       messages: [],
       isLoading: true,
@@ -72,8 +73,9 @@ class Messages extends Component {
 
   addMessageListener = (channelId) => {
     let messages = [];
+    const ref = this.getMessagesRef();
     let uniqueUsers = new Set();
-    this.messagesRef.child(channelId).on("child_added", (snapshot) => {
+    ref.child(channelId).on("child_added", (snapshot) => {
       messages.push(snapshot.val());
       if (snapshot.val().user.name) {
         uniqueUsers.add(snapshot.val().user.name);
@@ -84,6 +86,12 @@ class Messages extends Component {
         uniqueUsersCount: uniqueUsers.size,
       });
     });
+  };
+
+  getMessagesRef = () => {
+    return this.props.isPrivateChannel
+      ? this.privateMessagesRef
+      : this.messagesRef;
   };
 
   displayMessages = (messages) => {
@@ -113,15 +121,16 @@ class Messages extends Component {
       loadingSearch,
       searchResults,
     } = this.state;
-    const { user, channel } = this.props;
+    const { user, channel, isPrivateChannel } = this.props;
 
     return (
       <React.Fragment>
         <MessagesHeader
-          channelName={channel ? `#${channel.name}` : ""}
+          channelName={channel ? `${channel.name}` : ""}
           uniqueUsersCount={uniqueUsersCount}
           handleSearch={this.handleSearch}
           loadingSearch={loadingSearch}
+          isPrivateChannel={isPrivateChannel}
         />
 
         <Segment>
@@ -138,6 +147,8 @@ class Messages extends Component {
           user={user}
           channel={channel}
           isProgressBarVisible={this.isProgressBarVisible}
+          isPrivateChannel={isPrivateChannel}
+          getMessagesRef={this.getMessagesRef}
         />
       </React.Fragment>
     );
@@ -147,6 +158,7 @@ class Messages extends Component {
 const mapStateToProps = (state) => {
   return {
     channel: state.channel.currentChannel,
+    isPrivateChannel: state.channel.isPrivate,
     user: state.user.user,
   };
 };

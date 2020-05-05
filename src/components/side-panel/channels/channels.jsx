@@ -3,7 +3,10 @@ import { Menu, Icon, Modal, Form, Input, Button } from "semantic-ui-react";
 import { connect } from "react-redux";
 
 import firebase from "../../../firebase/firebase";
-import { setCurrentUser } from "../../../redux/channel/channel-actions";
+import {
+  setCurrentChannel,
+  setChannelPrivate,
+} from "../../../redux/channel/channel-actions";
 
 class Channels extends Component {
   constructor() {
@@ -58,6 +61,7 @@ class Channels extends Component {
 
   changeChannel = (channel) => {
     this.props.setCurrentChannel(channel);
+    this.props.setChannelPrivate(false);
     this.setActiveChannel(channel);
   };
 
@@ -126,7 +130,7 @@ class Channels extends Component {
 
     return (
       <React.Fragment>
-        <Menu.Menu style={{ paddingBottom: "2em" }}>
+        <Menu.Menu className="menu">
           <Menu.Item>
             <span>
               <Icon name="exchange" /> CHANNELS
@@ -186,7 +190,10 @@ const mapStateToProps = (state) => {
 const mapDispatchToProps = (dispatch) => {
   return {
     setCurrentChannel: (channel) => {
-      return dispatch(setCurrentUser(channel));
+      return dispatch(setCurrentChannel(channel));
+    },
+    setChannelPrivate: (isPrivate) => {
+      return dispatch(setChannelPrivate(isPrivate));
     },
   };
 };
