@@ -60,8 +60,8 @@ class Channels extends Component {
   }
 
   addNotificationsListener = (channelId) => {
-    const { channel, notifications } = this.state;
     this.messagesRef.child(channelId).on("value", (snapshot) => {
+      const { channel, notifications } = this.state;
       if (channel) {
         this.handleNotifications(
           channelId,
@@ -84,14 +84,7 @@ class Channels extends Component {
       return notification.id === channelId;
     });
 
-    if (index === -1) {
-      notifications.push({
-        id: channelId,
-        total: snapshot.numChildren(),
-        lastKnownTotal: snapshot.numChildren(),
-        count: 0,
-      });
-    } else {
+    if (index !== -1) {
       if (channelId !== currentChannelId) {
         lastTotal = notifications[index].total;
         if (snapshot.numChildren() - lastTotal > 0) {
@@ -99,6 +92,13 @@ class Channels extends Component {
         }
       }
       notifications[index].lastKnownTotal = snapshot.numChildren();
+    } else {
+      notifications.push({
+        id: channelId,
+        total: snapshot.numChildren(),
+        lastKnownTotal: snapshot.numChildren(),
+        count: 0,
+      });
     }
 
     this.setState({ notifications });
@@ -126,7 +126,7 @@ class Channels extends Component {
       }
     });
 
-    return count;
+    if (count > 0) return count;
   };
 
   setInitialChannel = () => {
@@ -143,10 +143,11 @@ class Channels extends Component {
 
   changeChannel = (channel) => {
     this.setActiveChannel(channel);
-    this.clearNotifications();
     this.props.setCurrentChannel(channel);
     this.props.setChannelPrivate(false);
-    this.setState({ channel });
+    this.setState({ channel }, () => {
+      this.clearNotifications();
+    });
   };
 
   openModal = () => {
@@ -186,7 +187,6 @@ class Channels extends Component {
       await this.channelRef.child(key).update(channel);
       this.setState({ channelName: "", aboutChannel: "" });
       this.closeModal();
-      console.log("channel added");
     } catch (error) {
       console.error(error);
     }
@@ -217,7 +217,6 @@ class Channels extends Component {
 
   render() {
     const { channels, modal, channelName, aboutChannel } = this.state;
-
     return (
       <React.Fragment>
         <Menu.Menu className="menu">
