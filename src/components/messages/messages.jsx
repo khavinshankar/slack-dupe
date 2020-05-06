@@ -13,6 +13,7 @@ class Messages extends Component {
 
     this.messagesRef = firebase.database().ref("messages");
     this.privateMessagesRef = firebase.database().ref("private-messages");
+    this.usersRef = firebase.database().ref("users");
     this.state = {
       messages: [],
       isLoading: true,
@@ -21,6 +22,7 @@ class Messages extends Component {
       searchTerm: "",
       loadingSearch: false,
       searchResults: [],
+      isStarred: false,
     };
   }
 
@@ -30,14 +32,11 @@ class Messages extends Component {
       const { user, channel } = this.props;
 
       if (user && channel) {
-        this.addListeners(channel.id);
+        this.addMessageListener(channel.id);
+        this.addStarsListener(user.uid, channel.id);
       }
     }
   }
-
-  addListeners = (channelId) => {
-    this.addMessageListener(channelId);
-  };
 
   handleSearch = (event) => {
     this.setState(
@@ -106,6 +105,49 @@ class Messages extends Component {
       : null;
   };
 
+  addStarsListener = async (userId, channelId) => {
+    const response = await this.usersRef
+      .child(userId)
+      .child("starred")
+      .once("value");
+    if (response.val()) {
+      const channelIds = Object.keys(response.val());
+      const starred = channelIds.includes(channelId);
+      this.setState({ isStarred: starred });
+    }
+  };
+
+  handleStar = () => {
+    this.setState({ isStarred: !this.state.isStarred }, () => {
+      this.starChannel();
+    });
+  };
+
+  starChannel = () => {
+    const { user, channel } = this.props;
+    if (this.state.isStarred) {
+      this.usersRef.child(`${user.uid}/starred`).update({
+        [channel.id]: {
+          name: channel.name,
+          details: channel.details,
+          createdBy: {
+            name: channel.createdBy.name,
+            avatar: channel.createdBy.avatar,
+          },
+        },
+      });
+    } else {
+      this.usersRef
+        .child(`${user.uid}/starred`)
+        .child(channel.id)
+        .remove((error) => {
+          if (error) {
+            console.error(error);
+          }
+        });
+    }
+  };
+
   isProgressBarVisible = (percent) => {
     if (percent > 0 && percent < 100) {
       this.setState({ progressBar: true });
@@ -120,6 +162,7 @@ class Messages extends Component {
       searchTerm,
       loadingSearch,
       searchResults,
+      isStarred,
     } = this.state;
     const { user, channel, isPrivateChannel } = this.props;
 
@@ -131,6 +174,8 @@ class Messages extends Component {
           handleSearch={this.handleSearch}
           loadingSearch={loadingSearch}
           isPrivateChannel={isPrivateChannel}
+          handleStar={this.handleStar}
+          isStarred={isStarred}
         />
 
         <Segment>
