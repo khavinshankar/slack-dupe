@@ -12,3 +12,10 @@ export const clearUser = () => {
     type: userActionTypes.CLEAR_USER,
   };
 };
+
+export const setUsersPosts = (usersPosts) => {
+  return {
+    type: userActionTypes.SET_USERS_POSTS,
+    payload: usersPosts,
+  };
+};

@@ -3,6 +3,7 @@ import userActionTypes from "./user-types";
 const INITIAL_STATE = {
   user: null,
   isLoading: true,
+  usersPosts: null,
 };
 
 const userReducer = (state = INITIAL_STATE, action) => {
@@ -18,6 +19,11 @@ const userReducer = (state = INITIAL_STATE, action) => {
         ...state,
         user: null,
         isLoading: false,
+      };
+    case userActionTypes.SET_USERS_POSTS:
+      return {
+        ...state,
+        usersPosts: action.payload,
       };
     default:
       return state;

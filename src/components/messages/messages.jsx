@@ -6,6 +6,7 @@ import firebase from "../../firebase/firebase";
 import MessagesHeader from "./messages-header/messages-header";
 import MessagesForm from "./messages-form/messages-form";
 import Message from "./message/message";
+import { setUsersPosts } from "../../redux/user/user-actions";
 
 class Messages extends Component {
   constructor() {
@@ -84,7 +85,24 @@ class Messages extends Component {
         messagesLoading: false,
         uniqueUsersCount: uniqueUsers.size,
       });
+      this.countUsersPosts(messages);
     });
+  };
+
+  countUsersPosts = (messages) => {
+    let usersPosts = messages.reduce((acc, message) => {
+      if (message.user.name in acc) {
+        acc[message.user.name].count += 1;
+      } else {
+        acc[message.user.name] = {
+          avatar: message.user.avatar,
+          count: 1,
+        };
+      }
+
+      return acc;
+    }, {});
+    this.props.setUsersPosts(usersPosts);
   };
 
   getMessagesRef = () => {
@@ -208,4 +226,12 @@ const mapStateToProps = (state) => {
   };
 };
 
-export default connect(mapStateToProps)(Messages);
+const mapDispatchToProps = (dispatch) => {
+  return {
+    setUsersPosts: (usersPosts) => {
+      return dispatch(setUsersPosts(usersPosts));
+    },
+  };
+};
+
+export default connect(mapStateToProps, mapDispatchToProps)(Messages);
