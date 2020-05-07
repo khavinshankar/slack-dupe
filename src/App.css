@@ -41,3 +41,33 @@ body,
 .menu {
   padding-bottom: 1em;
 }
+
+.color-container {
+  position: relative;
+  overflow: hidden;
+  width: 35px;
+  border-radius: 3px;
+}
+
+.color-square {
+  width: 35px;
+  height: 35px;
+}
+
+.color-overlay {
+  width: 85px;
+  height: 35px;
+  transform: rotate(225deg);
+}
+
+.color-modal {
+  display: grid !important;
+  grid-template-columns: auto auto !important;
+}
+
+.centre {
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+  width: 40%;
+}

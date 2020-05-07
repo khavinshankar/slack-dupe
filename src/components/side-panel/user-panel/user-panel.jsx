@@ -46,9 +46,12 @@ class UserPanel extends Component {
   };
 
   render() {
-    const { displayName, photoURL } = this.props.user;
+    const {
+      user: { displayName, photoURL },
+      primaryColor,
+    } = this.props;
     return (
-      <Grid style={{ background: "#4c3c4c" }}>
+      <Grid style={{ background: primaryColor }}>
         <GridColumn>
           <GridRow style={{ padding: "1.2em", margin: 0 }}>
             <Header inverted floated="left" as="h2">
