@@ -22,7 +22,7 @@ class Channels extends Component {
 
     this.channelRef = firebase.database().ref("channels");
     this.messagesRef = firebase.database().ref("messages");
-
+    this.typingRef = firebase.database().ref("typing");
     this.state = {
       channels: [],
       channel: null,
@@ -141,6 +141,13 @@ class Channels extends Component {
     this.setState({ activeChannel: channel.id });
   };
 
+  removeTyping = () => {
+    const { user, channel } = this.props;
+    if (user && channel) {
+      this.typingRef.child(channel.id).child(user.uid).remove();
+    }
+  };
+
   changeChannel = (channel) => {
     this.setActiveChannel(channel);
     this.props.setCurrentChannel(channel);
@@ -148,6 +155,7 @@ class Channels extends Component {
     this.setState({ channel }, () => {
       this.clearNotifications();
     });
+    this.removeTyping();
   };
 
   openModal = () => {

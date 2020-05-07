@@ -12,7 +12,7 @@ class MessagesForm extends Component {
 
     this.messagesRef = firebase.database().ref("messages");
     this.storageRef = firebase.storage().ref();
-
+    this.typingRef = firebase.database().ref("typing");
     this.state = {
       message: "",
       isLoading: false,
@@ -30,6 +30,26 @@ class MessagesForm extends Component {
 
   closeModal = () => {
     this.setState({ modal: false });
+  };
+
+  handleKeyDown = () => {
+    if (this.state.message) {
+      this.addTyping();
+    } else {
+      this.removeTyping();
+    }
+  };
+
+  addTyping = () => {
+    const { user, channel } = this.props;
+    this.typingRef.child(channel.id).child(user.uid).set(user.displayName);
+  };
+
+  removeTyping = () => {
+    const { user, channel } = this.props;
+    if (user && channel) {
+      this.typingRef.child(channel.id).child(user.uid).remove();
+    }
   };
 
   getPath = () => {
@@ -109,6 +129,7 @@ class MessagesForm extends Component {
           .push()
           .set(this.createMessage());
         this.setState({ isLoading: false, message: "", errors: [] });
+        this.removeTyping();
       } catch (error) {
         this.setState({ isLoading: false, errors: [...errors, error] });
         console.error(error);
@@ -156,6 +177,7 @@ class MessagesForm extends Component {
           labelPosition="left"
           placeholder="TYPE IN"
           onChange={this.handleChange}
+          onKeyDown={this.handleKeyDown}
           value={message}
           className={errors.length ? "error" : ""}
         />

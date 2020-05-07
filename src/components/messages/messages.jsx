@@ -7,6 +7,7 @@ import MessagesHeader from "./messages-header/messages-header";
 import MessagesForm from "./messages-form/messages-form";
 import Message from "./message/message";
 import { setUsersPosts } from "../../redux/user/user-actions";
+import Typing from "./typing/typing";
 
 class Messages extends Component {
   constructor() {
@@ -15,6 +16,8 @@ class Messages extends Component {
     this.messagesRef = firebase.database().ref("messages");
     this.privateMessagesRef = firebase.database().ref("private-messages");
     this.usersRef = firebase.database().ref("users");
+    this.typingRef = firebase.database().ref("typing");
+    this.connectedRef = firebase.database().ref(".info/connect");
     this.state = {
       messages: [],
       isLoading: true,
@@ -24,6 +27,7 @@ class Messages extends Component {
       loadingSearch: false,
       searchResults: [],
       isStarred: false,
+      usersTyping: [],
     };
   }
 
@@ -35,9 +39,51 @@ class Messages extends Component {
       if (user && channel) {
         this.addMessageListener(channel.id);
         this.addStarsListener(user.uid, channel.id);
+        this.addTypingListener(user.uid, channel.id);
       }
     }
   }
+
+  addTypingListener = (userId, channelId) => {
+    let usersTyping = [];
+
+    this.typingRef.child(channelId).on("child_added", (snapshot) => {
+      if (snapshot.key !== userId) {
+        usersTyping.push({
+          id: snapshot.key,
+          name: snapshot.val(),
+        });
+        this.setState({ usersTyping });
+      }
+    });
+
+    this.typingRef.child(channelId).on("child_removed", (snapshot) => {
+      const index = usersTyping.findIndex((user) => {
+        return user.id === snapshot.key;
+      });
+
+      if (index !== -1) {
+        usersTyping = usersTyping.filter((user) => {
+          return user.id !== snapshot.key;
+        });
+        this.setState({ usersTyping });
+      }
+    });
+
+    this.connectedRef.on("value", (snapshot) => {
+      if (snapshot.val()) {
+        this.typingRef
+          .child(channelId)
+          .child(userId)
+          .onDisconnect()
+          .remove((error) => {
+            if (error) {
+              console.error(error);
+            }
+          });
+      }
+    });
+  };
 
   handleSearch = (event) => {
     this.setState(
@@ -172,6 +218,27 @@ class Messages extends Component {
     }
   };
 
+  displayUsersTyping = (usersTyping) => {
+    return (
+      usersTyping &&
+      usersTyping.map((user) => {
+        return (
+          <div
+            key={user.id}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              marginBottom: "0.2em",
+            }}
+          >
+            <span className="user-typing">{user.name} is typing</span>{" "}
+            <Typing />
+          </div>
+        );
+      })
+    );
+  };
+
   render() {
     const {
       messages,
@@ -181,6 +248,7 @@ class Messages extends Component {
       loadingSearch,
       searchResults,
       isStarred,
+      usersTyping,
     } = this.state;
     const { user, channel, isPrivateChannel } = this.props;
 
@@ -203,6 +271,7 @@ class Messages extends Component {
             {searchTerm
               ? this.displayMessages(searchResults)
               : this.displayMessages(messages)}
+            {this.displayUsersTyping(usersTyping)}
           </Comment.Group>
         </Segment>
 
