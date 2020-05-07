@@ -111,8 +111,6 @@ class ColorPanel extends Component {
   render() {
     const { modal, primaryColor, secondaryColor, colorSchemes } = this.state;
 
-    console.log(this.state.primaryColor, this.state.secondaryColor);
-
     return (
       <Sidebar
         as={Menu}
@@ -132,7 +130,7 @@ class ColorPanel extends Component {
           open={modal}
           onClose={this.closeModal}
           size="fullscreen"
-          centered="false"
+          centered={false}
         >
           <Modal.Header>CHOOSE APP COLOR</Modal.Header>
           <Modal.Content className="color-modal">

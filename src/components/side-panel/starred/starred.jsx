@@ -51,7 +51,6 @@ class Starred extends Component {
   };
 
   displayChannels = (channels) => {
-    console.log("channels", channels, this.state.starredChannels);
     return channels.length
       ? channels.map((channel) => {
           return (

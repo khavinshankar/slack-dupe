@@ -6,6 +6,7 @@ import firebase from "../../firebase/firebase";
 import MessagesHeader from "./messages-header/messages-header";
 import MessagesForm from "./messages-form/messages-form";
 import Message from "./message/message";
+import Skeleton from "./skeleton/skeleton";
 import { setUsersPosts } from "../../redux/user/user-actions";
 import Typing from "./typing/typing";
 
@@ -17,7 +18,8 @@ class Messages extends Component {
     this.privateMessagesRef = firebase.database().ref("private-messages");
     this.usersRef = firebase.database().ref("users");
     this.typingRef = firebase.database().ref("typing");
-    this.connectedRef = firebase.database().ref(".info/connect");
+    this.connectedRef = firebase.database().ref(".info/connected");
+    this.activeRef = firebase.database().ref("active");
     this.state = {
       messages: [],
       isLoading: true,
@@ -31,7 +33,7 @@ class Messages extends Component {
     };
   }
 
-  componentDidUpdate(prevProps) {
+  componentDidUpdate(prevProps, prevState) {
     if (prevProps.channel !== this.props.channel) {
       this.setState({ messages: [], uniqueUsersCount: 0 });
       const { user, channel } = this.props;
@@ -42,7 +44,15 @@ class Messages extends Component {
         this.addTypingListener(user.uid, channel.id);
       }
     }
+
+    if (this.messagesEnd) {
+      this.scrollToBottom();
+    }
   }
+
+  scrollToBottom = () => {
+    this.messagesEnd.scrollIntoView({ behavior: "smooth" });
+  };
 
   addTypingListener = (userId, channelId) => {
     let usersTyping = [];
@@ -69,6 +79,19 @@ class Messages extends Component {
         this.setState({ usersTyping });
       }
     });
+
+    // this.activeRef.on("child_removed", (snapshot) => {
+    //   const index = usersTyping.findIndex((user) => {
+    //     return user.id === snapshot.key;
+    //   });
+
+    //   if (index !== -1) {
+    //     usersTyping = usersTyping.filter((user) => {
+    //       return user.id !== snapshot.key;
+    //     });
+    //     this.setState({ usersTyping });
+    //   }
+    // });
 
     this.connectedRef.on("value", (snapshot) => {
       if (snapshot.val()) {
@@ -128,7 +151,7 @@ class Messages extends Component {
       }
       this.setState({
         messages,
-        messagesLoading: false,
+        isLoading: false,
         uniqueUsersCount: uniqueUsers.size,
       });
       this.countUsersPosts(messages);
@@ -239,6 +262,16 @@ class Messages extends Component {
     );
   };
 
+  displayMessagesSkeleton = (isLoading) => {
+    return isLoading ? (
+      <React.Fragment>
+        {[...Array(10)].map((_, i) => {
+          return <Skeleton key={i} />;
+        })}
+      </React.Fragment>
+    ) : null;
+  };
+
   render() {
     const {
       messages,
@@ -249,6 +282,7 @@ class Messages extends Component {
       searchResults,
       isStarred,
       usersTyping,
+      isLoading,
     } = this.state;
     const { user, channel, isPrivateChannel } = this.props;
 
@@ -268,10 +302,12 @@ class Messages extends Component {
           <Comment.Group
             className={progressBar ? "messages-progress" : "messages"}
           >
+            {this.displayMessagesSkeleton(isLoading)}
             {searchTerm
               ? this.displayMessages(searchResults)
               : this.displayMessages(messages)}
             {this.displayUsersTyping(usersTyping)}
+            <div ref={(node) => (this.messagesEnd = node)}></div>
           </Comment.Group>
         </Segment>
 
