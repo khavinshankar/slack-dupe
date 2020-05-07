@@ -30,6 +30,7 @@ class Messages extends Component {
       searchResults: [],
       isStarred: false,
       usersTyping: [],
+      listeners: [],
     };
   }
 
@@ -50,6 +51,30 @@ class Messages extends Component {
     }
   }
 
+  componentWillUnmount() {
+    this.removeListeners();
+  }
+
+  removeListeners = () => {
+    this.connectedRef.off();
+    this.state.listeners.forEach((listener) => {
+      listener.ref.child(listener.id).off(listener.event);
+    });
+  };
+
+  addToListeners = (id, ref, event) => {
+    const index = this.state.listeners.findIndex((listener) => {
+      return (
+        listener.id === id && listener.ref === ref && listener.event === event
+      );
+    });
+
+    if (index === -1) {
+      const listener = { id, ref, event };
+      this.setState({ listeners: [...this.state.listeners, listener] });
+    }
+  };
+
   scrollToBottom = () => {
     this.messagesEnd.scrollIntoView({ behavior: "smooth" });
   };
@@ -66,6 +91,7 @@ class Messages extends Component {
         this.setState({ usersTyping });
       }
     });
+    this.addToListeners(channelId, this.typingRef, "child_added");
 
     this.typingRef.child(channelId).on("child_removed", (snapshot) => {
       const index = usersTyping.findIndex((user) => {
@@ -79,6 +105,7 @@ class Messages extends Component {
         this.setState({ usersTyping });
       }
     });
+    this.addToListeners(channelId, this.typingRef, "child_removed");
 
     // this.activeRef.on("child_removed", (snapshot) => {
     //   const index = usersTyping.findIndex((user) => {
@@ -156,6 +183,7 @@ class Messages extends Component {
       });
       this.countUsersPosts(messages);
     });
+    this.addToListeners(channelId, ref, "child_added");
   };
 
   countUsersPosts = (messages) => {

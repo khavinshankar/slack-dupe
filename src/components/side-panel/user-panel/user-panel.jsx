@@ -65,7 +65,7 @@ class UserPanel extends Component {
   uploadImage = async () => {
     try {
       const snapshot = await this.storageRef
-        .child(`avatars/user-${this.userRef.uid}`)
+        .child(`avatars/user/${this.userRef.uid}`)
         .put(this.state.blob, { contentType: "image/jpeg" });
       const downloadUrl = await snapshot.ref.getDownloadURL();
       this.setState({ avatarUrl: downloadUrl }, () => this.changeAvatar());

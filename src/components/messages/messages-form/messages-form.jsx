@@ -27,6 +27,13 @@ class MessagesForm extends Component {
     };
   }
 
+  componentWillUnmount() {
+    if (this.state.uploadTask) {
+      this.state.uploadTask.cancel();
+      this.setState({ uploadTask: null });
+    }
+  }
+
   openModal = () => {
     this.setState({ modal: true });
   };
@@ -88,7 +95,7 @@ class MessagesForm extends Component {
 
   getPath = () => {
     if (this.props.isPrivateChannel)
-      return `chat/private-${this.props.channel.id}`;
+      return `chat/private/${this.props.channel.id}`;
     return "chat/public";
   };
 

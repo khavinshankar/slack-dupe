@@ -25,6 +25,14 @@ class Starred extends Component {
     }
   }
 
+  componentWillUnmount() {
+    this.removeListeners();
+  }
+
+  removeListeners = () => {
+    this.usersRef.child(this.props.user.uid).child("starred").off();
+  };
+
   addStaredChannelsListeners = (userId) => {
     this.usersRef
       .child(userId)
